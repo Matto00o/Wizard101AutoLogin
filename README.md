@@ -96,8 +96,17 @@ python3 tools/test_bytecode.py  # does the payload still assemble correctly?
 ```
 
 Against a running client, `--check` resolves the addresses and writes nothing.
-If `scan_pe.py` reports a miss, the patterns have to be rebuilt in a
-disassembler.
+`w101.sh` runs the injector by hand, finding the prefix and the Proton build for
+you:
+
+```sh
+./w101.sh --check     # read-only
+./w101.sh             # log in now, using the credentials file
+```
+
+A healthy check prints four addresses and a non-zero `[dat]`. If `[dat]` is
+zero the client is still loading. If `scan_pe.py` reports a miss, the patterns
+have to be rebuilt in a disassembler.
 
 ## How it works
 

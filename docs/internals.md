@@ -14,6 +14,7 @@ Port of `libs/wizlaunch/src/login.rs` from Deimos-Wizard101. See the
 | `tools/scan_pe.py` | Linux | offline pattern check against the exe on disk |
 | `tools/test_bytecode.py` | Linux | disassembles the payload, and diffs C against Python |
 | `lutris-prelaunch.sh` | Linux | Lutris pre-launch hook |
+| `w101.sh` | Linux | runs the injector by hand against a running client |
 | `w101-autologin.cmd` | Windows | launch the client and auto-login, in one step |
 | `setup-prefix.sh` | Linux | optional: embeddable Python in the game prefix, for iterating without rebuilding |
 

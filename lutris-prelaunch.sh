@@ -44,6 +44,12 @@ W101_WINE="${W101_WINE:-$(command -v wine || true)}"
 [[ -x "${W101_WINE:-}" ]] || die "no wine binary found, set W101_WINE"
 echo "wine: $W101_WINE"
 
+# --check needs no credentials; anything else does.
+wants_check=0
+for a in "$@"; do
+    [[ "$a" == "--check" ]] && wants_check=1
+done
+
 # Credentials: exported environment, then the keyring, then a 0600 file.
 if [[ -z "${W101_PASS:-}" && -n "${W101_USER:-}" ]] && command -v secret-tool >/dev/null 2>&1; then
     W101_PASS="$(secret-tool lookup service w101-autologin account "$W101_USER" 2>/dev/null || true)"
@@ -59,7 +65,9 @@ if [[ -z "${W101_PASS:-}" ]]; then
         echo "credentials: $CRED_FILE"
     fi
 fi
-[[ -n "${W101_USER:-}" && -n "${W101_PASS:-}" ]] || die "no credentials found, see README"
+if [[ $wants_check -eq 0 ]]; then
+    [[ -n "${W101_USER:-}" && -n "${W101_PASS:-}" ]] || die "no credentials found, see README"
+fi
 export W101_USER W101_PASS
 
 if [[ -f "$EXE_C" ]]; then
