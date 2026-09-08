@@ -29,6 +29,30 @@ echo "=== $(date -Is) prelaunch (DISPLAY=$DISPLAY) ==="
 
 die() { echo "error: $*" >&2; exit 1; }
 
+# Path of the wineserver socket directory for a prefix, which Wine names after
+# the prefix's device and inode.
+wineserver_dir() {
+    local dev ino
+    read -r dev ino < <(stat -c '%d %i' "$1")
+    printf '/tmp/.wine-%s/server-%x-%x' "$(id -u)" "$dev" "$ino"
+}
+
+# Block until a wineserver is live for the prefix, or fail after `timeout`.
+#
+# Running wine before the game does would make this script create the
+# wineserver itself, and Proton then fails to launch into one it did not set
+# up. Waiting on the socket keeps everything off the prefix until the game
+# owns it.
+wait_for_wineserver() {
+    local socket="$(wineserver_dir "$1")/socket" deadline=$((SECONDS + $2))
+    while [[ ! -S "$socket" ]]; do
+        (( SECONDS >= deadline )) && return 1
+        sleep 0.5
+    done
+    return 0
+}
+
+
 # Same Proton build the game runs under, so both share one wineserver.
 if [[ -z "${W101_WINE:-}" ]]; then
     version="$(cat "$PREFIX/version" 2>/dev/null || true)"
@@ -80,6 +104,13 @@ else
     die "no injector found, run ./build-c.sh"
 fi
 echo "injector: ${target[*]}"
+
+WAIT_WINESERVER="${W101_WAIT_WINESERVER:-120}"
+if ! wait_for_wineserver "$PREFIX" "$WAIT_WINESERVER"; then
+    echo "no wineserver for $PREFIX after ${WAIT_WINESERVER}s, the game never started"
+    exit 0
+fi
+echo "wineserver up, attaching"
 
 export WINEPREFIX="$PREFIX"
 export WINEDEBUG="${WINEDEBUG:--all}"

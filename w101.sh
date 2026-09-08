@@ -23,6 +23,13 @@ CRED_FILE="${W101_CRED_FILE:-$HOME/.config/w101-autologin/credentials}"
 
 die() { echo "error: $*" >&2; exit 1; }
 
+# Wine names the wineserver socket directory after the prefix device and inode.
+wineserver_socket() {
+    local dev ino
+    read -r dev ino < <(stat -c '%d %i' "$1")
+    printf '/tmp/.wine-%s/server-%x-%x/socket' "$(id -u)" "$dev" "$ino"
+}
+
 [[ -d "$PREFIX" ]] || die "prefix not found: $PREFIX (set W101_PREFIX)"
 [[ -f "$EXE" ]] || die "injector not found: $EXE (run ./build-c.sh)"
 
@@ -38,6 +45,11 @@ if [[ -z "${W101_WINE:-}" ]]; then
     done
 fi
 [[ -x "${W101_WINE:-}" ]] || die "no wine binary found, set W101_WINE"
+
+# Attaching to a live wineserver is fine; starting one is not, because Proton
+# then cannot launch the game into it.
+[[ -S "$(wineserver_socket "$PREFIX")" ]] \
+    || die "no wineserver running for $PREFIX -- start the game first"
 
 # --check needs no credentials; anything else does.
 args=("$@")
